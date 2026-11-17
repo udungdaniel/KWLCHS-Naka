@@ -305,7 +305,7 @@ function Home({ school, navigate }: { school: SchoolInfo; navigate: (v: string) 
           <Card>
             <CardContent className="pt-5">
               <Phone className="size-5 text-emerald-700" />
-              <h3 className="mt-2 font-semibold text-sm">Call / WhatsApp</h3>
+              <h3 className="mt-2 font-semibold text-sm">Call or WhatsApp</h3>
               <p className="mt-1 text-xs text-muted-foreground">{school.phone}</p>
               {school.whatsappLine && (
                 <a
