@@ -56,7 +56,7 @@ async function main() {
       schoolName: 'Professor Dr. Karl Wilhelm Lauterbach College of Health Sciences and Technology',
       shortName: 'KWLCHS Naka',
       address: 'Naka Headquarter Road, Naka, Gwer West LGA, Benue State, Nigeria',
-      phone: '0803 123 4567',
+      phone: '0806 262 7620',
       email: 'info@kwchs-naka.edu.ng',
       motto: 'Training Competent Health Professionals for Nigeria',
       about:
@@ -64,7 +64,7 @@ async function main() {
       currentSession: '2026/2027',
       currentSemester: 1,
       admissionOpen: true,
-      whatsappLine: '0803 123 4567',
+      whatsappLine: '0806 262 7620',
     },
   })
 
