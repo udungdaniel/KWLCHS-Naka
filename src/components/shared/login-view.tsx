@@ -147,7 +147,7 @@ export function LoginView({
 
           <Card className="border-dashed">
             <CardContent className="pt-4 pb-4 text-xs text-muted-foreground space-y-1">
-              <p className="font-medium text-foreground">Demo accounts (for client preview)</p>
+              <p className="font-medium text-foreground">Demo accounts login details for your review</p>
               <p>Provost — provost@kwchs-naka.edu.ng / Provost@2025</p>
               <p>Registrar — registrar@kwchs-naka.edu.ng / Registrar@2025</p>
               <p>Bursar — bursar@kwchs-naka.edu.ng / Bursar@2025</p>
