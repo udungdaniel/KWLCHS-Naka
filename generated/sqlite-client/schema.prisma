@@ -1,0 +1,268 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/sqlite-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("SQLITE_DATABASE_URL")
+}
+
+// ---------- System settings (single row) ----------
+model Setting {
+  id              String   @id @default("main")
+  schoolName      String
+  shortName       String
+  address         String
+  phone           String
+  email           String
+  motto           String?
+  about           String?
+  currentSession  String
+  currentSemester Int      @default(1)
+  admissionOpen   Boolean  @default(true)
+  whatsappLine    String?
+  updatedAt       DateTime @updatedAt
+}
+
+model Department {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  code          String         @unique
+  description   String?
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  students      Student[]
+  staff         Staff[]
+  courses       Course[]
+  applications  Application[]
+  feeStructures FeeStructure[]
+  timetables    Timetable[]
+}
+
+// Admin users: Provost, Registrar, Bursar only
+model AdminUser {
+  id           String   @id @default(cuid())
+  fullName     String
+  email        String   @unique
+  passwordHash String
+  role         String // PROVOST | REGISTRAR | BURSAR
+  phone        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model Student {
+  id            String     @id @default(cuid())
+  matricNo      String     @unique
+  firstName     String
+  lastName      String
+  otherName     String?
+  gender        String
+  dob           String? // yyyy-mm-dd
+  email         String?
+  phone         String?
+  address       String?
+  stateOfOrigin String?
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id])
+  level         Int        @default(100)
+  status        String     @default("ACTIVE") // ACTIVE | GRADUATED | SUSPENDED | WITHDRAWN
+  photo         String? // data URL
+  passwordHash  String
+  createdAt     DateTime   @default(now())
+  results       Result[]
+  payments      Payment[]
+  loans         BookLoan[]
+}
+
+// Online admission applications (public form)
+model Application {
+  id            String     @id @default(cuid())
+  applicationNo String     @unique
+  firstName     String
+  lastName      String
+  otherName     String?
+  gender        String
+  dob           String?
+  email         String?
+  phone         String
+  address       String?
+  stateOfOrigin String?
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id])
+  examType      String?
+  examYear      String?
+  examNo        String?
+  subjects      String? // JSON [{subject, grade}]
+  passport      String? // data URL
+  status        String     @default("PENDING") // PENDING | ADMITTED | REJECTED
+  reviewNote    String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  createdAt     DateTime   @default(now())
+}
+
+model Staff {
+  id               String            @id @default(cuid())
+  staffNo          String            @unique
+  firstName        String
+  lastName         String
+  otherName        String?
+  gender           String?
+  dob              String?
+  email            String?
+  phone            String?
+  departmentId     String?
+  department       Department?       @relation(fields: [departmentId], references: [id])
+  specialty        String?
+  qualifications   String?
+  rank             String
+  salary           Float             @default(0)
+  picture          String? // data URL
+  status           String            @default("ACTIVE")
+  employmentDate   String?
+  createdAt        DateTime          @default(now())
+  attendances      StaffAttendance[]
+  courses          Course[]
+  timetableEntries Timetable[]       @relation("TimetableLecturer")
+}
+
+model StaffAttendance {
+  id      String  @id @default(cuid())
+  staffId String
+  staff   Staff   @relation(fields: [staffId], references: [id])
+  date    String // yyyy-mm-dd
+  status  String // PRESENT | ABSENT | LATE | LEAVE
+  note    String?
+
+  @@unique([staffId, date])
+}
+
+model Course {
+  id           String      @id @default(cuid())
+  code         String      @unique // e.g. MLT 101
+  title        String
+  creditUnits  Int
+  semester     Int // 1 | 2
+  level        Int
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  lecturerId   String?
+  lecturer     Staff?      @relation(fields: [lecturerId], references: [id])
+  results      Result[]
+  timetables   Timetable[]
+}
+
+model Result {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id])
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id])
+  session    String
+  semester   Int
+  caScore    Float    @default(0) // /40
+  examScore  Float    @default(0) // /60
+  total      Float    @default(0)
+  grade      String   @default("F")
+  gradePoint Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([studentId, courseId, session, semester])
+}
+
+model FeeStructure {
+  id           String     @id @default(cuid())
+  session      String
+  level        Int
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  itemName     String // Tuition, Registration, Examination...
+  amount       Float
+
+  @@unique([session, level, departmentId, itemName])
+}
+
+model Payment {
+  id           String   @id @default(cuid())
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id])
+  session      String
+  amount       Float
+  method       String // CASH | TRANSFER | POS
+  reference    String?
+  note         String?
+  recordedById String?
+  createdAt    DateTime @default(now())
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  audience    String // STUDENTS | STAFF | BOTH
+  createdById String?
+  createdAt   DateTime @default(now())
+}
+
+model MessageLog {
+  id            String   @id @default(cuid())
+  kind          String // WHATSAPP | EMAIL | FEE_REMINDER
+  recipientType String // STUDENT | STAFF
+  recipientName String
+  destination   String // phone or email
+  subject       String?
+  body          String
+  link          String?
+  opened        Boolean  @default(false)
+  createdById   String?
+  createdAt     DateTime @default(now())
+}
+
+model Timetable {
+  id           String     @id @default(cuid())
+  session      String
+  semester     Int
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  level        Int
+  day          String // MONDAY..FRIDAY
+  startTime    String // "09:00"
+  endTime      String
+  courseId     String
+  course       Course     @relation(fields: [courseId], references: [id])
+  lecturerId   String?
+  lecturer     Staff?     @relation("TimetableLecturer", fields: [lecturerId], references: [id])
+  room         String?
+
+  @@unique([session, semester, departmentId, level, day, startTime])
+}
+
+model Book {
+  id              String     @id @default(cuid())
+  title           String
+  author          String
+  isbn            String?
+  category        String?
+  copiesTotal     Int        @default(1)
+  copiesAvailable Int        @default(1)
+  shelfLocation   String?
+  createdAt       DateTime   @default(now())
+  loans           BookLoan[]
+}
+
+model BookLoan {
+  id              String    @id @default(cuid())
+  bookId          String
+  book            Book      @relation(fields: [bookId], references: [id])
+  borrowerType    String // STUDENT | STAFF
+  borrowerRef     String // matric no / staff no
+  borrowerName    String
+  dueDate         String // yyyy-mm-dd
+  returnedAt      DateTime?
+  status          String    @default("ACTIVE") // ACTIVE | RETURNED
+  borrowedAt      DateTime  @default(now())
+  studentId       String?
+  borrowerStudent Student?  @relation(fields: [studentId], references: [id])
+}
